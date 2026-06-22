@@ -3,6 +3,8 @@ Test Case 3: Kiểm thử chức năng Giỏ hàng & Checkout
 Website: https://www.saucedemo.com
 """
 
+import time
+
 import pytest
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
@@ -19,9 +21,11 @@ BASE_URL = "https://www.saucedemo.com"
 def click_until(driver, locator, condition):
     """Click tối đa 3 lần cho đến khi trang đạt trạng thái mong đợi."""
     for attempt in range(3):
-        WebDriverWait(driver, 10).until(
+        element = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable(locator)
-        ).click()
+        )
+        time.sleep(0.5)
+        element.click()
         try:
             return WebDriverWait(driver, 5).until(condition)
         except TimeoutException:
@@ -145,6 +149,7 @@ class TestCheckout:
         )
 
         # Bước 2: Điền thông tin
+        time.sleep(0.5)
         driver.find_element(By.ID, "first-name").send_keys("Nguyen")
         driver.find_element(By.ID, "last-name").send_keys("Van A")
         driver.find_element(By.ID, "postal-code").send_keys("700000")
@@ -200,11 +205,14 @@ class TestCheckout:
         )
 
         # Bỏ trống First Name, chỉ điền Last Name và Zip
+        time.sleep(0.5)
         driver.find_element(By.ID, "last-name").send_keys("Van A")
         driver.find_element(By.ID, "postal-code").send_keys("700000")
-        driver.find_element(By.ID, "continue").click()
-
-        error_msg = driver.find_element(By.CSS_SELECTOR, "[data-test='error']")
+        error_msg = click_until(
+            driver,
+            (By.ID, "continue"),
+            EC.visibility_of_element_located((By.CSS_SELECTOR, "[data-test='error']")),
+        )
         assert error_msg.is_displayed(), "Error message should be displayed"
         assert "First Name is required" in error_msg.text, (
             f"Unexpected error: {error_msg.text}"
